@@ -14,12 +14,12 @@
  * 
  * When serializing an instance using serialize(), the resulting string *will*
  * contain non-printable characters! The serialized representation must be handled
- * using binary safe functions.
+ * using binary safe functions. The serialized size is roughly $m/8 bytes.
  * 
  * An alternative 7-bit ASCII-safe representation can be obtained by __toString/casting
  * the object to a string. This representation can be unserialized using
  * BloomFilter::unserializeFromStringRepresentation(). This ASCII-safe representation
- * takes about eight times more space than the straight serialized version.
+ * takes about 33% more space than the straight serialized version.
  */
 class BloomFilter {
 
@@ -28,7 +28,7 @@ class BloomFilter {
 	protected $k;
 	
 	/**
-	 * @param int $m Size of the bit field
+	 * @param int $m Size of the bit field. Actual memory used will be $m/8 bytes.
 	 * @param int $k Number of hash functions
 	 */	
 	public function __construct($m, $k) {
@@ -52,6 +52,14 @@ class BloomFilter {
 		return ceil(($m / $n) * log(2));
 	}
 	
+	/**
+	 * Returns an instance based on the bit field size and expected number of stored items.
+	 * Automates the calculation of k.
+	 * 
+	 * @param int $m Bit field size
+	 * @param int $n Expected number of stored values
+	 * @return BloomFilter
+	 */
 	public static function constructForTypicalSize($m, $n) {
 		return new self($m, self::getK($m, $n));
 	}
@@ -63,11 +71,11 @@ class BloomFilter {
 	 * @return BloomFilter Unserialized instance
 	 */
 	public static function unserializeFromStringRepresentation($string) {
-		if (!preg_match('~k:(?P<k>\d+)/m:(?P<m>\d+)\((?P<bitfield>[01]+)\)~', $string, $matches)) {
-			throw new InvalidArgumentException('Invalid strings representation');
+		if (!preg_match('~k:(?P<k>\d+)/m:(?P<m>\d+)\((?P<bitfield>[0-9a-zA-Z+/=]+)\)~', $string, $matches)) {
+			throw new InvalidArgumentException('Invalid string representation');
 		}
 		$bf = new self((int)$matches['m'], (int)$matches['k']);
-		$bf->bitField = pack('H*', join(array_map(function ($byte) { return str_pad(base_convert($byte, 2, 16), 2, '0', STR_PAD_LEFT); }, str_split($matches['bitfield'], 8))));
+		$bf->bitField = base64_decode($matches['bitfield']);
 		return $bf;
 	}
 
@@ -174,7 +182,7 @@ class BloomFilter {
 	 * @return string
 	 */
 	public function __toString() {
-		return "k:$this->k/m:$this->m(" . $this->showBitField() . ')';
+		return "k:$this->k/m:$this->m(" . base64_encode($this->bitField) . ')';
 	}
 	
 }
