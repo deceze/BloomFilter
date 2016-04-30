@@ -59,7 +59,7 @@ class BloomFilter {
 	}
 
 	protected function initializeBitFieldOfLength($length) {
-		return str_repeat("\x0", ceil($length / 8));
+		return str_repeat("\x00", ceil($length / 8));
 	}
 		
 	protected function setBitAtPosition($pos) {
@@ -86,10 +86,10 @@ class BloomFilter {
 		}
 
 		static $positionMap = array(
-			8 => "\x1",
-			7 => "\x2",
-			6 => "\x4",
-			5 => "\x8",
+			8 => "\x01",
+			7 => "\x02",
+			6 => "\x04",
+			5 => "\x08",
 			4 => "\x10",
 			3 => "\x20",
 			2 => "\x40",
@@ -105,7 +105,7 @@ class BloomFilter {
 	 * Calculates the positions a value hashes to in the bitfield.
 	 * 
 	 * @param string $value The value to insert into the bitfield.
-	 * @return SqlFixedArray Array containing the numeric positions in the bitfield.
+	 * @return SplFixedArray Array containing the numeric positions in the bitfield.
 	 */
 	protected function positions($value) {
 		mt_srand(crc32($value));
