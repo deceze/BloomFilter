@@ -96,7 +96,7 @@ class BloomFilter {
 			1 => "\x80"
 		);
 		
-		$char = ceil($pos / 8) - 1;
+		$char = (int)ceil($pos / 8) - 1;
 		$byte = $positionMap[$pos % 8 ?: 8];
 		return array($char, $byte);
 	}
